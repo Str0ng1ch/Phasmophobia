@@ -27,8 +27,6 @@ WAIT_FOR_DOOR_TIME = config.getfloat("SLEEP", "WAIT_FOR_DOOR_TIME")
 FOLDER = config.get("IMAGES", "FOLDER")
 INITIALIZING_TEXT = FOLDER + config.get("IMAGES", "INITIALIZING_TEXT")
 NEXT_BUTTON = FOLDER + config.get("IMAGES", "NEXT_BUTTON")
-GAME_BUTTON = FOLDER + config.get("IMAGES", "GAME_BUTTON")
-ACCEPT_BUTTON = FOLDER + config.get("IMAGES", "ACCEPT_BUTTON")
 PANEL_BUTTON = FOLDER + config.get("IMAGES", "PANEL_BUTTON")
 
 STOP_BUTTON = config.get("STOP", "STOP_BUTTON")
@@ -94,7 +92,12 @@ def select_map() -> None:
 
 
 def start_game() -> None:
-    """"""
+    """
+    Функция запуска игры. Бот
+        — нажимает кнопку готов,
+        — нажимаю кнопку "играть"
+    :return:
+    """
     select_map()
     time.sleep(MIDDLE_SLEEP_TIME)
     perform_mouse_click(960, 950)
@@ -102,7 +105,13 @@ def start_game() -> None:
     perform_mouse_click(1300, 950)
 
 
-def is_image_on_screen(image_path, search_area=(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)):
+def is_image_on_screen(image_path: str, search_area: tuple = (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)) -> (bool, tuple):
+    """
+    Нахождения заданного изображения на экране или в определенной области.
+    :param image_path: Путь к заданному изображению.
+    :param search_area: Область поиска (по умолчанию весь экран).
+    :return:
+    """
     image = Image.open(image_path)
     location = pyautogui.locateOnScreen(image, confidence=CONFIDENCE, region=search_area)
     image.close()
@@ -112,7 +121,11 @@ def is_image_on_screen(image_path, search_area=(0, 0, SCREEN_WIDTH, SCREEN_HEIGH
     return False, location
 
 
-def check_initializing_image():
+def check_initializing_image() -> None:
+    """
+    Проверка загрузки карты.
+    :return:
+    """
     while True:
         if not is_image_on_screen(INITIALIZING_TEXT)[0]:
             time.sleep(0.5)
@@ -122,7 +135,11 @@ def check_initializing_image():
     time.sleep(2)
 
 
-def choose_ghost():
+def choose_ghost() -> None:
+    """
+    Определение призрака. Выбирается учитывая настройку из конфига (самый частый или заранее выбранный).
+    :return:
+    """
     if MOST_FREQUENT_GHOST:
         with open('../resources/ghost_type_frequency.json', 'r+') as json_file:
             ghosts = json.load(json_file)
@@ -134,7 +151,11 @@ def choose_ghost():
         perform_mouse_click(*GHOST_TYPES_CORDS[GHOST_TYPE])
 
 
-def select_ghost():
+def select_ghost() -> None:
+    """
+    Выбор призрака (открытие журнала, выбор, закрытие журнала).
+    :return:
+    """
     perform_keyboard_click("j")
     time.sleep(MIDDLE_SLEEP_TIME)
     perform_mouse_click(1050, 80)
@@ -144,7 +165,11 @@ def select_ghost():
     perform_keyboard_click("j")
 
 
-def perform_actions_after_panel_flag():
+def perform_actions_after_panel_flag() -> None:
+    """
+    Открытие дверей, выбор призрака и закрытие дверей.
+    :return:
+    """
     keyboard.release("d")
     time.sleep(SHORT_SLEEP_TIME)
     press_gate()
@@ -162,7 +187,11 @@ def perform_actions_after_panel_flag():
     perform_keyboard_click("p")
 
 
-def complete_mission():
+def complete_mission() -> None:
+    """
+    Выполнение миссии.
+    :return:
+    """
     perform_keyboard_click("o")
     time.sleep(SHORT_SLEEP_TIME)
     keyboard.press("d")
@@ -177,20 +206,34 @@ def complete_mission():
     perform_actions_after_panel_flag()
 
 
-def press_gate():
+def press_gate() -> None:
+    """
+    Нажатие на панель управления дверью фургона.
+    :return:
+    """
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
     time.sleep(SHORT_SLEEP_TIME)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
 
 
-def check_end_game_image():
+def check_end_game_image() -> None:
+    """
+    Проверка окончания загрузки (после завершения миссии).
+    :return:
+    """
     while True:
-        if is_image_on_screen(NEXT_BUTTON)[0] and is_image_on_screen(GAME_BUTTON)[0]:
-            break
+        if is_image_on_screen(NEXT_BUTTON)[0]:
+            time.sleep(SHORT_SLEEP_TIME)
+            if is_image_on_screen(NEXT_BUTTON)[0]:
+                break
         time.sleep(1)
 
 
-def end_game():
+def end_game() -> None:
+    """
+    Действия после окончания миссии (принять награду, закрыть отчет игры).
+    :return:
+    """
     perform_mouse_click(429, 920)
     time.sleep(MIDDLE_SLEEP_TIME)
     perform_mouse_click(960, 720)
@@ -201,12 +244,25 @@ def end_game():
     perform_mouse_click(1520, 920)
 
 
-def write_logs(is_guessed='', ghost_type=''):
+def write_logs(is_guessed: str = '', ghost_type: str = '') -> None:
+    """
+    Написание логов.
+    :param is_guessed: Угадан ли призрак ('' или 'Guessed!').
+    :param ghost_type: Тип призрака (указывается, если подключен tesseract)
+    :return:
+    """
     with open("../resources/logs.txt", "a") as f:
         f.write(f"{is_guessed}{ghost_type}finished: {str(datetime.datetime.now())}\n")
 
 
-def find_closest_ghost_type(recognized_text, ghosts):
+def find_closest_ghost_type(recognized_text: str, ghosts: list) -> str:
+    """
+    Нахождения наиболее похожего призрака на распознанный текст с изображения (иногда распознавание
+    не дает точный результат)
+    :param recognized_text: Распознанный текст.
+    :param ghosts: Все призраки.
+    :return: Тип призрака.
+    """
     min_distance, closest_word = float('inf'), ""
 
     for json_word in ghosts:
@@ -218,7 +274,11 @@ def find_closest_ghost_type(recognized_text, ghosts):
     return closest_word
 
 
-def remember_ghost_type():
+def remember_ghost_type() -> None:
+    """
+    Составление отчета о количество призраков, которые встречались.
+    :return:
+    """
     with open('../resources/ghost_type_frequency.json', 'r+') as json_file:
         ghosts = json.load(json_file)
         json_file.seek(0)
@@ -239,7 +299,11 @@ def remember_ghost_type():
 
 
 @profile
-def play():
+def play() -> None:
+    """
+    Цикл игры (начало, выполнение миссии и окончание).
+    :return:
+    """
     start_game()
     check_initializing_image()
 
@@ -249,7 +313,11 @@ def play():
     end_game()
 
 
-def infinite_play():
+def infinite_play() -> None:
+    """
+    Повтор цикла игры, пока он не будет остановлен.
+    :return:
+    """
     while True:
         time.sleep(INITIAL_SLEEP_TIME)
         play()
@@ -257,7 +325,11 @@ def infinite_play():
             break
 
 
-def finish():
+def finish() -> None:
+    """
+    Остановка цикла игры по нажатию клавиши.
+    :return:
+    """
     global END_PROGRAM
     while True:
         if keyboard.is_pressed(STOP_BUTTON):
@@ -266,7 +338,12 @@ def finish():
         time.sleep(SHORT_SLEEP_TIME)
 
 
-def run():
+def run() -> None:
+    """
+    Запуск в нескольких потоках игры и остановки игры для возможности обработки нажатия стоп
+    кнопки во время выполнения цикла игры.
+    :return:
+    """
     play_thread = threading.Thread(target=infinite_play)
     finish_thread = threading.Thread(target=finish)
 

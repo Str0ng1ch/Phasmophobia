@@ -83,7 +83,7 @@ def select_map() -> None:
         — возвращается на главную страницу.
     :return:
     """
-    perform_mouse_click(430, 540)
+    perform_mouse_click(30, 540)
     time.sleep(MIDDLE_SLEEP_TIME)
     perform_mouse_click(450, 400)
     time.sleep(MIDDLE_SLEEP_TIME)
@@ -183,7 +183,7 @@ def perform_actions_after_panel_flag() -> None:
     time.sleep(SHORT_SLEEP_TIME)
 
     press_gate()
-    time.sleep(SHORT_SLEEP_TIME)
+    time.sleep(MIDDLE_SLEEP_TIME)
     perform_keyboard_click("p")
 
 

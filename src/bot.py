@@ -3,7 +3,6 @@ import json
 import threading
 import time
 import configparser
-import winsound
 
 import keyboard
 import pyautogui
@@ -38,13 +37,14 @@ MOST_FREQUENT_GHOST = config.getboolean("GHOST", "MOST_FREQUENT")
 GHOST_TYPE = config.get("GHOST", "SELECTED_GHOST_TYPE")
 
 SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
+SCREEN_COEFFICIENT = SCREEN_WIDTH / 1920
 CONFIDENCE = 0.8
 END_PROGRAM = False
 GHOST_TYPES_CORDS = {
-    "poltergeist": (1120, 600),
-    "yurei": (1260, 710),
-    'the twins': (1400, 800),
-    'mara': (1120, 650)
+    "poltergeist": (int(1120 * SCREEN_COEFFICIENT), int(600 * SCREEN_COEFFICIENT)),
+    "yurei": (int(1260 * SCREEN_COEFFICIENT), int(710 * SCREEN_COEFFICIENT)),
+    'the twins': (int(1400 * SCREEN_COEFFICIENT), int(800 * SCREEN_COEFFICIENT)),
+    'mara': (int(1120 * SCREEN_COEFFICIENT), int(650 * SCREEN_COEFFICIENT))
 }
 
 ENABLE_TESSERACT = config.getboolean("TESSERACT", "ENABLE")
@@ -52,22 +52,40 @@ if ENABLE_TESSERACT:
     pytesseract.pytesseract.tesseract_cmd = config.get("TESSERACT", "PATH")
 
 
-def perform_mouse_click(x, y):
-    win32api.SetCursorPos((x, y))
+def perform_mouse_click(x: int, y: int) -> None:
+    """
+    Функция перестановки курсора в определенную позицию и клика в данной позиции.
+    :param x: Координаты установки курсора по ширине.
+    :param y: Координаты установки курсора по высоте.
+    :return:
+    """
+    win32api.SetCursorPos((int(x * SCREEN_COEFFICIENT), int(y * SCREEN_COEFFICIENT)))
     time.sleep(SHORT_SLEEP_TIME)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0)
     time.sleep(SHORT_SLEEP_TIME)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0)
 
 
-def perform_keyboard_click(letter):
-    keyboard.press(letter)
+def perform_keyboard_click(button: str) -> None:
+    """
+    Нажатие на клавиши на клавиатуре.
+    :param button: Кнопка, которую нужно нажать.
+    :return:
+    """
+    keyboard.press(button)
     time.sleep(SHORT_SLEEP_TIME)
-    keyboard.release(letter)
+    keyboard.release(button)
 
 
-def select_map():
-    perform_mouse_click(30, 540)
+def select_map() -> None:
+    """
+    Функция выбора карты. Бот
+        — из главного меню переходит на страницу выбора карты,
+        — выбирает карту,
+        — возвращается на главную страницу.
+    :return:
+    """
+    perform_mouse_click(430, 540)
     time.sleep(MIDDLE_SLEEP_TIME)
     perform_mouse_click(450, 400)
     time.sleep(MIDDLE_SLEEP_TIME)
@@ -75,7 +93,8 @@ def select_map():
     time.sleep(MIDDLE_SLEEP_TIME)
 
 
-def start_game():
+def start_game() -> None:
+    """"""
     select_map()
     time.sleep(MIDDLE_SLEEP_TIME)
     perform_mouse_click(960, 950)
@@ -151,8 +170,7 @@ def complete_mission():
     start = time.perf_counter()
     while time.perf_counter() - start < 7:
         is_on_screen, location = is_image_on_screen(PANEL_BUTTON)
-        if is_on_screen and 875 <= location.left <= 930:
-            winsound.Beep(1000, 500)
+        if is_on_screen and 875 * SCREEN_COEFFICIENT <= location.left <= 930 * SCREEN_COEFFICIENT:
             break
         time.sleep(SHORT_SLEEP_TIME)
 
@@ -205,7 +223,8 @@ def remember_ghost_type():
         ghosts = json.load(json_file)
         json_file.seek(0)
 
-        screenshot = ImageGrab.grab(bbox=(1000, 900, 1310, 970))
+        screenshot = ImageGrab.grab(bbox=(int(1000 * SCREEN_COEFFICIENT), int(900 * SCREEN_COEFFICIENT),
+                                          int(1310 * SCREEN_COEFFICIENT), int(970 * SCREEN_COEFFICIENT)))
         ghost_type = pytesseract.image_to_string(screenshot).strip().lower()
         ghost_type = find_closest_ghost_type(ghost_type, ghosts)
         screenshot.close()
@@ -256,12 +275,3 @@ def run():
 
     play_thread.join()
     finish_thread.join()
-
-
-def main():
-    # lvl 42, 18105$
-    run()
-
-
-if __name__ == "__main__":
-    main()
